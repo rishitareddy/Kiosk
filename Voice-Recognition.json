@@ -1,0 +1,8 @@
+{
+    "TranscriptionJobName": "ono",
+    "LanguageCode": "en-US",
+    "MediaFormat": "mp3",
+    "Media": {
+        "MediaFileUri": "s3://speech-buckets/Power_English_Update.mp3"
+    }
+}
