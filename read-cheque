@@ -1,0 +1,22 @@
+import boto3
+
+if __name__ == "__main__":
+
+    bucket='image-buckets'
+    photo='cheque4.jpg'
+    # 4&6
+    client=boto3.client('rekognition')
+    response=client.detect_text(Image={'S3Object':{'Bucket':bucket,'Name':photo}})
+    k=0                   
+    textDetections=response['TextDetections']
+    for text in textDetections:
+        if 'NO' in text['DetectedText'] or 'No' in text['DetectedText']:
+            k=1
+            continue
+        if k==1 and text['DetectedText'].isdigit():
+            print ('Account number:' + text['DetectedText'])
+            break
+        
+        
+        
+         
