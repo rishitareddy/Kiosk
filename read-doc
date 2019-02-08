@@ -1,0 +1,16 @@
+import boto3
+
+if __name__ == "__main__":
+
+    bucket='image-buckets'
+    photo='loan.jpg'
+    client=boto3.client('rekognition')
+    response=client.detect_text(Image={'S3Object':{'Bucket':bucket,'Name':photo}})
+    k=0                   
+    textDetections=response['TextDetections']
+    for text in textDetections:
+       print(text['DetectedText'])
+        
+        
+        
+         
