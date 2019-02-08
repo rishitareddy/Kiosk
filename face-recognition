@@ -1,0 +1,69 @@
+import cv2
+import numpy as np
+import boto3
+from shutil import copyfile
+cap = cv2.VideoCapture(0)
+seconds = 2
+millis = seconds * 1000
+name='Unknown'
+while (millis > 0):
+    ret, frame = cap.read()
+    millis = millis - 10
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)	
+    cv2.imshow('frame',frame)
+    if cv2.waitKey(2) & 0xFF == ord('q'):
+            break
+cv2.imwrite('temp.jpg', frame)
+print("Wrote Image")
+j=0          
+sourceFile='temp.jpg'
+bucket='face-image-buckets'
+       imageSource=open(sourceFile,'rb')
+client=boto3.client('rekognition')
+faces=client.search_faces_by_image(CollectionId=collectionId,Image={'Bytes': imageSource.read()})
+for matches in faces['FaceMatches']:
+    if 'ExternalImageId' in matches['Face'].keys():
+        name=matches['Face']['ExternalImageId']
+        confidence=matches['Face']['Confidence']
+        originalImage = cv2.imread('temp.jp')
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(originalImage, 'Christmas', (10,450), font, 3, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.imwrite('temp.jpg', originalImage)
+        print(name+' conf'+str(confidence))
+        j=2
+        print('Update with new image')
+        break
+if j!=2:   
+        print('Else begins')
+        print('Ask for name and save it as name')
+        name='Rishita'
+s3=boto3.resource('s3')
+imageSource.close()
+imageName=str(name)+'.jpg'
+copyfile(sourceFile, imageName) 
+imgSource=open(imageName,'rb')
+object = s3.Object('face-image-buckets',imageName)
+ret = object.put(Body=imgSource,
+                    Metadata={'FullName':name}
+                    )
+response=client.index_faces(CollectionId=collectionId,
+                            Image={'S3Object':{'Bucket':bucket,'Name':imageName}},
+                            ExternalImageId=name,
+                            MaxFaces=1,
+                            QualityFilter="AUTO",
+                            DetectionAttributes=['ALL'])
+print('Added with extImageId = '+str(name))
+print('Retreiving age,emotion and gender of person named extName')
+maxConf=0
+maxEmotion='Unknown'
+resp = client.detect_faces(Image={'S3Object':{'Bucket':bucket,'Name':imageName}},Attributes=['ALL'])
+for faceDetail in resp['FaceDetails']:
+    print('The detected face is between ' + str(faceDetail['AgeRange']['Low']) 
+              + ' and ' + str(faceDetail['AgeRange']['High']) + ' years old')
+    print('Gender is '+ str(faceDetail['Gender']['Value']))
+    for emotion in faceDetail['Emotions']:
+       if maxConf<emotion['Confidence']:
+            maxConf=emotion['Confidence']
+            maxEmotion=emotion['Type']
+    print('The person is '+ maxEmotion)
+
